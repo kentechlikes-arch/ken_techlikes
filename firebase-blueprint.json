@@ -1,0 +1,132 @@
+{
+  "entities": {
+    "Admin": {
+      "title": "Admin",
+      "description": "Administrator account role assignment and privileges",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "role": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "grantedBy": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["uid", "role"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Registered client profile and authentication details",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "accountTier": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "apiKey": { "type": "string" },
+        "isAdmin": { "type": "boolean" },
+        "role": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Client SMM growth service order record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "serviceId": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "platform": { "type": "string" },
+        "link": { "type": "string" },
+        "quantity": { "type": "number" },
+        "charge": { "type": "number" },
+        "currency": { "type": "string" },
+        "status": { "type": "string" },
+        "startCount": { "type": "number" },
+        "currentCount": { "type": "number" },
+        "targetCount": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "mpesaRef": { "type": "string" },
+        "refillEligible": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "serviceName", "platform", "link", "quantity", "charge", "status"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial deposit or order charge record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string" },
+        "reference": { "type": "string" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "type", "amount", "method", "status"]
+    },
+    "Wallet": {
+      "title": "Wallet",
+      "description": "Client wallet account and balances",
+      "type": "object",
+      "properties": {
+        "balance": { "type": "number" },
+        "totalSpent": { "type": "number" },
+        "ordersCount": { "type": "number" },
+        "accountTier": { "type": "string" },
+        "userName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["balance"]
+    },
+    "SystemConfig": {
+      "title": "SystemConfig",
+      "description": "Global system configurations including services catalog, broadcast notice, and payment settings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "broadcastNotice": { "type": "string" },
+        "paymentPhone": { "type": "string" },
+        "paybill": { "type": "string" },
+        "supportEmail": { "type": "string" },
+        "supportPhone": { "type": "string" },
+        "promoBonusPercent": { "type": "number" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Authorized administrator accounts and superuser permissions"
+    },
+    "/system/{docId}": {
+      "schema": "SystemConfig",
+      "description": "System broadcast announcements, service catalog modifications, and platform settings"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Registered user accounts and contact profiles"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of social media marketing orders placed by clients"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Financial ledger of M-Pesa STK deposits and order debits"
+    },
+    "/wallets/{walletId}": {
+      "schema": "Wallet",
+      "description": "User wallet balance and account profile"
+    }
+  }
+}
