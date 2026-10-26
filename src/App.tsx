@@ -621,7 +621,7 @@ export default function App() {
               </span>
               <div>
                 <span className="font-black text-emerald-400 mr-1.5 uppercase text-xs">Guest Preview Mode:</span>
-                <span className="text-slate-300">You are browsing wholesale rates. Register or log in to claim your 50 KES free bonus and place orders.</span>
+                <span className="text-slate-300">You are browsing wholesale rates. Register or log in to place orders.</span>
               </div>
             </div>
             <div className="flex items-center space-x-2 flex-shrink-0">
@@ -643,7 +643,7 @@ export default function App() {
                 }}
                 className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black text-xs font-black shadow-md shadow-emerald-950/30 transition-all cursor-pointer"
               >
-                Register (+50 KES)
+                Register
               </button>
             </div>
           </div>

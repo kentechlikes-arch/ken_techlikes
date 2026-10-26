@@ -74,12 +74,6 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
     setTab(newTab);
   };
 
-  // Prefill Admin credentials shortcut
-  const handlePrefillAdmin = () => {
-    setEmail('amadifanitees@gmail.com');
-    resetFormAlerts();
-  };
-
   // Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,11 +231,11 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800/90 backdrop-blur-md flex items-start space-x-3">
               <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Gift className="w-4 h-4" />
+                <Zap className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-white">50 KES Free Welcome Credit</h4>
-                <p className="text-[11px] text-slate-400">Credited to your wallet instantly upon new account registration.</p>
+                <h4 className="text-xs font-bold text-white">Instant Automated Delivery</h4>
+                <p className="text-[11px] text-slate-400">Fulfillment starts automatically in under 3 seconds upon ordering.</p>
               </div>
             </div>
 
@@ -319,16 +313,13 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => handleSwitchTab('register')}
-                className={`flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                className={`flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center transition-all cursor-pointer ${
                   tab === 'register'
                     ? 'bg-emerald-500 text-black shadow-md font-black'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <span>Register</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-emerald-400/30 text-[10px] font-black uppercase text-white">
-                  +50 KES
-                </span>
               </button>
             </div>
 
@@ -531,7 +522,7 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
                   </>
                 ) : tab === 'register' ? (
                   <>
-                    <span>Create Account & Claim 50 KES</span>
+                    <span>Create Account</span>
                     <Sparkles className="w-4 h-4" />
                   </>
                 ) : (
@@ -556,23 +547,6 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
               )}
 
             </form>
-
-            {/* Admin Helper Button (Discreet) */}
-            {tab === 'login' && (
-              <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                <span className="flex items-center space-x-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Admin Portal</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={handlePrefillAdmin}
-                  className="text-emerald-400 hover:text-emerald-300 font-mono transition-colors cursor-pointer"
-                >
-                  Use amadifanitees@gmail.com
-                </button>
-              </div>
-            )}
 
             {/* Bottom link: Explore services without auth */}
             {onExploreGuest && (

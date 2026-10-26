@@ -169,7 +169,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
             {mode === 'login' && 'Access your synced orders, wallet, and reseller rates'}
-            {mode === 'register' && 'Get 50 KES free welcome bonus + instant M-Pesa automated access'}
+            {mode === 'register' && 'Instant access to wholesale SMM rates & automated fulfillment'}
             {mode === 'reset-password' && "We'll send you a secure Firebase link to reset your password"}
           </p>
         </div>
@@ -197,7 +197,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Register (+50 KES Free)
+              Register
             </button>
           </div>
         )}
@@ -335,24 +335,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
-          {/* Bonus callout on Register */}
+          {/* Terms note on Register */}
           {mode === 'register' && (
-            <div className="space-y-2">
-              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/20 text-emerald-300 text-xs flex items-center space-x-2">
-                <Sparkles className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>Includes <strong>50 KES</strong> instant signup bonus into your wallet!</span>
-              </div>
-              <p className="text-[11px] text-slate-400 text-center leading-normal">
-                By registering, you agree to KEN_TECH LIKES{' '}
-                <button
-                  type="button"
-                  onClick={onOpenTerms}
-                  className="text-emerald-400 underline hover:text-emerald-300 font-semibold cursor-pointer"
-                >
-                  Platform Terms & Reserved Names Policy
-                </button>
-              </p>
-            </div>
+            <p className="text-[11px] text-slate-400 text-center leading-normal">
+              By registering, you agree to KEN_TECH LIKES{' '}
+              <button
+                type="button"
+                onClick={onOpenTerms}
+                className="text-emerald-400 underline hover:text-emerald-300 font-semibold cursor-pointer"
+              >
+                Platform Terms & Reserved Names Policy
+              </button>
+            </p>
           )}
 
           {/* Submit Button */}

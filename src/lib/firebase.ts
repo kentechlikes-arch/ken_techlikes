@@ -125,11 +125,11 @@ export async function registerAccount(
   // Save profile to users collection
   await setDoc(doc(db, 'users', user.uid), profile);
 
-  // Initialize their wallet with 50 KES welcome credit bonus
+  // Initialize their wallet with 0 balance
   await setDoc(
     doc(db, 'wallets', user.uid),
     {
-      balance: 50,
+      balance: 0,
       updatedAt: new Date().toISOString(),
       userName: displayName,
       phoneNumber: phoneNumber?.trim() || '',
@@ -139,18 +139,6 @@ export async function registerAccount(
     },
     { merge: true }
   );
-
-  // Add welcome bonus record
-  const welcomeTxn: TransactionRecord = {
-    id: `TXN-BONUS-${Math.floor(1000 + Math.random() * 9000)}`,
-    type: 'bonus',
-    amount: 50,
-    method: 'Wallet Balance',
-    reference: 'WELCOME-BONUS-50KES',
-    status: 'Completed',
-    timestamp: 'Just now',
-  };
-  await setDoc(doc(db, 'transactions', welcomeTxn.id), welcomeTxn);
 
   return { user, profile };
 }
