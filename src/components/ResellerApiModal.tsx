@@ -161,7 +161,7 @@ console.log(data); // { order: "KT-98124", status: "success" }`
           </div>
           <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
             <span className="font-mono font-bold text-emerald-400 block mb-1">action=balance</span>
-            <p className="text-slate-400 text-[11px]">Returns your current KEN_TECH LIKES wallet balance in KES and default currency.</p>
+            <p className="text-slate-400 text-[11px]">Returns your current KEN_TECH LIKES wallet balance in KES (Kenya Shillings).</p>
           </div>
         </div>
 

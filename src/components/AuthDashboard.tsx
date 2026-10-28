@@ -229,7 +229,7 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
           
           <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs font-semibold backdrop-blur-md">
             <Zap className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Instant Safaricom M-Pesa STK Push Active &bull; &lt; 3s Delivery</span>
+            <span>Lipa Na M-Pesa Buy Goods Till 1856074 Active &bull; Instant Delivery</span>
           </div>
 
           <div className="space-y-3">
@@ -262,8 +262,8 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
                 <Smartphone className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-white">Direct M-Pesa STK Push</h4>
-                <p className="text-[11px] text-slate-400">Pay directly via SIM PIN prompt or Paybill 522522 with zero delays.</p>
+                <h4 className="text-xs font-bold text-white">Lipa Na M-Pesa Till 1856074</h4>
+                <p className="text-[11px] text-slate-400">Pay directly to Buy Goods Till 1856074 (KEN_TECH LIKES) with instant verification.</p>
               </div>
             </div>
 
@@ -409,7 +409,7 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5 text-left flex items-center justify-between">
                     <span>Safaricom M-Pesa Phone Number</span>
-                    <span className="text-[10px] text-emerald-400 font-normal">For STK Push</span>
+                    <span className="text-[10px] text-emerald-400 font-normal">For SMS Verification</span>
                   </label>
                   <div className="relative">
                     <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />

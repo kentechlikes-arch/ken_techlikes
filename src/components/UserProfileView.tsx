@@ -151,7 +151,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                 Browsing as Guest &bull; Unlock Synced Account
               </h4>
               <p className="text-xs text-slate-300 mt-1 max-w-lg">
-                Create a registered account to sync your orders across devices, unlock password protection, and receive a <strong>50 KES Free Welcome Bonus</strong>!
+                Create a registered account to sync your orders across devices, unlock password protection, and access automated wholesale rates.
               </p>
             </div>
           </div>
@@ -167,7 +167,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black text-xs font-black shadow-md shadow-emerald-950/40 flex items-center space-x-1.5 transition-all cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5" />
-              <span>Create Account (+50 KES)</span>
+              <span>Create Account</span>
             </button>
           </div>
         </div>

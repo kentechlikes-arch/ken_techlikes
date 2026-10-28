@@ -12,7 +12,7 @@ export type PlatformId =
   | 'traffic'
   | 'linkedin';
 
-export type Currency = 'KES' | 'USD' | 'EUR' | 'NGN';
+export type Currency = 'KES';
 
 export type ServiceType = 
   | 'followers' 
@@ -96,7 +96,7 @@ export interface TransactionRecord {
   id: string;
   type: 'deposit' | 'order' | 'refund' | 'bonus';
   amount: number; // in KES
-  method: 'M-PESA Till 1856074' | 'M-PESA STK Push' | 'Wallet Balance' | string;
+  method: 'M-PESA Till 1856074' | 'Wallet Balance' | string;
   reference: string;
   status: 'Completed' | 'Pending' | 'Failed';
   timestamp: string;

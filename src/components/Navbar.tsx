@@ -65,7 +65,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenQrCode,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
@@ -99,8 +98,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <span className="font-medium text-emerald-400">KEN_TECH LIKES:</span>
-            <span className="hidden sm:inline text-slate-300">Kenya's #1 Automated SMM Growth Panel &bull; Instant M-Pesa STK Push 24/7</span>
-            <span className="sm:hidden text-slate-300">Instant M-Pesa Delivery 24/7</span>
+            <span className="hidden sm:inline text-slate-300">Kenya's #1 Automated SMM Growth Panel &bull; Lipa Na M-Pesa Buy Goods Till 1856074 24/7</span>
+            <span className="sm:hidden text-slate-300">Till 1856074 Active 24/7</span>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -195,7 +194,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={() => {
                   setThemeDropdownOpen(!themeDropdownOpen);
-                  setCurrencyDropdownOpen(false);
                 }}
                 title="Change Background Theme"
                 className="p-2 rounded-lg bg-slate-800/60 border border-slate-700/60 text-slate-300 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors"
@@ -227,38 +225,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* Currency selector */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setCurrencyDropdownOpen(!currencyDropdownOpen);
-                  setThemeDropdownOpen(false);
-                }}
-                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/80 text-xs font-semibold text-slate-200 hover:border-slate-600 transition-colors"
-              >
-                <span className="text-emerald-400 font-mono">{currency}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-
-              {currencyDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-32 rounded-xl bg-slate-900 border border-slate-800 p-1.5 shadow-2xl z-50">
-                  {(['KES', 'USD', 'EUR', 'NGN'] as Currency[]).map((cur) => (
-                    <button
-                      key={cur}
-                      onClick={() => {
-                        setCurrency(cur);
-                        setCurrencyDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between ${
-                        currency === cur ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-300 hover:bg-slate-800'
-                      }`}
-                    >
-                      <span>{cur}</span>
-                      {currency === cur && <span className="text-emerald-400">&bull;</span>}
-                    </button>
-                  ))}
-                </div>
-              )}
+            {/* Operating Currency Badge: KES Only */}
+            <div className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/80 text-xs font-bold text-slate-200">
+              <span className="text-emerald-400 font-mono font-black">KES</span>
+              <span className="text-[10px] text-slate-400 font-sans hidden sm:inline">(Ksh)</span>
             </div>
 
             {/* Wallet balance display + Instant Deposit button */}
@@ -530,7 +500,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="flex-1 py-2 rounded-xl bg-emerald-500 text-black text-xs font-black flex items-center justify-center space-x-1 shadow-md shadow-emerald-950/40"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
-                  <span>Register (+50 KES)</span>
+                  <span>Register</span>
                 </button>
               </div>
             )}
@@ -577,7 +547,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold"
             >
-              Lipa Na M-Pesa STK
+              Lipa Na M-Pesa Till 1856074
             </button>
           </div>
 

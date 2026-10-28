@@ -52,7 +52,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </span>
           <span className="text-slate-400 font-bold">&bull;</span>
           <span className="text-xs sm:text-sm text-slate-200 font-semibold hidden sm:inline">
-            Direct Automated M-Pesa STK Push 24/7
+            Lipa Na M-Pesa Buy Goods Till 1856074
           </span>
         </div>
 
@@ -67,7 +67,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <p className="mt-4 sm:mt-6 text-base sm:text-xl text-slate-200 max-w-3xl mx-auto font-medium leading-relaxed">
           Instantly boost TikTok, Instagram, YouTube, Facebook, Telegram & WhatsApp.
           Get real engagement, monetization hours, and genuine reach delivered in minutes with seamless 
-          <span className="text-emerald-400 font-bold underline decoration-emerald-500/50 underline-offset-4"> Lipa Na M-Pesa </span> support.
+          <span className="text-emerald-400 font-bold underline decoration-emerald-500/50 underline-offset-4"> Lipa Na M-Pesa Till 1856074 </span> support.
         </p>
 
         {/* Key Feature Highlights - High contrast and visible fonts */}
@@ -82,7 +82,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
           <div className="flex items-center space-x-2 bg-slate-900/90 px-3.5 py-2 rounded-xl border border-slate-700 shadow-md">
             <Smartphone className="w-4 h-4 text-emerald-400" />
-            <span>Instant M-Pesa STK Push</span>
+            <span>Buy Goods Till 1856074</span>
           </div>
           <div className="flex items-center space-x-2 bg-slate-900/90 px-3.5 py-2 rounded-xl border border-slate-700 shadow-md">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -151,10 +151,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 text-center shadow-md">
             <div className="flex items-center justify-center space-x-1.5 text-slate-300 text-xs sm:text-sm font-semibold mb-1">
               <Smartphone className="w-4 h-4 text-emerald-400" />
-              <span>M-Pesa STK Push</span>
+              <span>Buy Goods Till 1856074</span>
             </div>
             <div className="text-2xl sm:text-3xl font-black text-white font-mono">Instant</div>
-            <div className="text-xs font-bold text-emerald-400 mt-0.5">Paybill 522522 & Express</div>
+            <div className="text-xs font-bold text-emerald-400 mt-0.5">KEN_TECH LIKES &bull; KES</div>
           </div>
         </div>
 

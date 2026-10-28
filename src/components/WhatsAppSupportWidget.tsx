@@ -45,7 +45,7 @@ export const WhatsAppSupportWidget: React.FC = () => {
       
       const lower = text.toLowerCase();
       if (lower.includes('mpesa') || lower.includes('m-pesa') || lower.includes('topup')) {
-        reply = 'For M-Pesa: You can use our automated STK Push under "Top Up", or send money directly to Paybill 522522 with your user ID. Your funds credit automatically!';
+        reply = 'For M-Pesa deposits: Go to Lipa Na M-Pesa -> Buy Goods and Services -> Enter Till Number 1856074 (KEN_TECH LIKES). After paying, copy and paste the entire M-Pesa SMS message into our verification box for instant wallet credit!';
       } else if (lower.includes('tiktok') || lower.includes('delivery')) {
         reply = 'TikTok services start within 30 seconds to 5 minutes! Likes and views are instant, while followers drip-feed safely at 10k-25k per day.';
       } else if (lower.includes('track') || lower.includes('order')) {

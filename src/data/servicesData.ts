@@ -2435,19 +2435,10 @@ export const SERVICES_CATALOG: ServiceItem[] = [
 
 export const CURRENCY_RATES: Record<string, { symbol: string; rate: number; label: string }> = {
   KES: { symbol: 'KES ', rate: 1, label: 'Kenyan Shilling (KES)' },
-  USD: { symbol: '$', rate: 1 / 130, label: 'US Dollar (USD)' },
-  EUR: { symbol: '€', rate: 1 / 142, label: 'Euro (EUR)' },
-  NGN: { symbol: '₦', rate: 11.4, label: 'Nigerian Naira (NGN)' },
 };
 
-export function formatCurrency(amountInKES: number, currency: string = 'KES'): string {
-  const conf = CURRENCY_RATES[currency] || CURRENCY_RATES.KES;
-  const converted = amountInKES * conf.rate;
-  if (currency === 'KES' || currency === 'NGN') {
-    return `${conf.symbol}${Math.round(converted).toLocaleString()}`;
-  } else {
-    return `${conf.symbol}${converted.toFixed(2)}`;
-  }
+export function formatCurrency(amountInKES: number, _currency: string = 'KES'): string {
+  return `KES ${Math.round(amountInKES).toLocaleString()}`;
 }
 
 export const INITIAL_ORDERS: OrderRecord[] = [
@@ -2526,7 +2517,7 @@ export const INITIAL_TRANSACTIONS = [
     id: 'TXN-9081',
     type: 'deposit' as const,
     amount: 1500,
-    method: 'M-PESA STK Push' as const,
+    method: 'M-PESA Till 1856074' as const,
     reference: 'QJD78239KA',
     status: 'Completed' as const,
     timestamp: '2026-10-14 06:10 AM',
@@ -2544,7 +2535,7 @@ export const INITIAL_TRANSACTIONS = [
     id: 'TXN-8941',
     type: 'deposit' as const,
     amount: 5000,
-    method: 'M-PESA Paybill' as const,
+    method: 'M-PESA Till 1856074' as const,
     reference: 'QJC99120PL',
     status: 'Completed' as const,
     timestamp: '2026-10-12 14:05 PM',
@@ -2554,7 +2545,7 @@ export const INITIAL_TRANSACTIONS = [
 export const FAQS = [
   {
     q: 'What is KEN_TECH LIKES and how does it compare to Duka La Likes?',
-    a: 'KEN_TECH LIKES is Kenya and East Africa\'s premier automated SMM panel and social media growth engine. Just like dukalalikes.com, we offer instant automated delivery for TikTok, Instagram, YouTube, Facebook, Telegram, WhatsApp Channels, Google Maps Reviews, and X, backed by instant automated M-Pesa STK Push payments, real Kenyan engagement options, 24/7 support, and 0% drop refill guarantees.',
+    a: 'KEN_TECH LIKES is Kenya and East Africa\'s premier automated SMM panel and social media growth engine. Just like dukalalikes.com, we offer instant automated delivery for TikTok, Instagram, YouTube, Facebook, Telegram, WhatsApp Channels, Google Maps Reviews, and X, backed by Lipa Na M-Pesa Buy Goods Till 1856074 payments, real Kenyan engagement options, 24/7 support, and 0% drop refill guarantees.',
   },
   {
     q: 'Do I need to share my social media account passwords?',

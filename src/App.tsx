@@ -109,7 +109,7 @@ export default function App() {
       const cached = localStorage.getItem('kentech_broadcast_notice');
       if (cached) return cached;
     } catch (e) {}
-    return '⚡ Safaricom M-Pesa STK Push is operating at instant speeds (< 3s). Extra 10% promo bonus active on deposits!';
+    return '⚡ Lipa Na M-Pesa Buy Goods Till 1856074 (KEN_TECH LIKES) is active with instant automated SMS verification. 0% fee!';
   });
 
   // Global system, payment lines & operational settings with local cache fallback
@@ -320,7 +320,7 @@ export default function App() {
       id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
       type: 'order',
       amount: newOrder.charge,
-      method: paymentSource === 'mpesa' ? 'M-PESA STK Push' : 'Wallet Balance',
+      method: paymentSource === 'mpesa' ? 'M-PESA Till 1856074' : 'Wallet Balance',
       reference: newOrder.mpesaRef || `ORD-${newOrder.id}`,
       status: 'Completed',
       timestamp: 'Just now',
@@ -871,7 +871,7 @@ export default function App() {
 
       </main>
 
-      {/* Deposit / M-Pesa STK Modal */}
+      {/* Deposit / M-Pesa Till 1856074 Modal */}
       <DepositModal
         isOpen={isDepositOpen}
         onClose={() => setIsDepositOpen(false)}

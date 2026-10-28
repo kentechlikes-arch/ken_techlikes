@@ -956,7 +956,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               rows={3}
               value={noticeDraft}
               onChange={(e) => setNoticeDraft(e.target.value)}
-              placeholder="e.g. ⚡ Safaricom M-Pesa STK Push is operating at instant speeds (< 3s)..."
+              placeholder="e.g. ⚡ Safaricom Lipa Na M-Pesa Buy Goods Till 1856074 is active. Pay and paste whole SMS for instant wallet credit..."
               className="w-full bg-[#121A2A] border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
             />
 
@@ -964,10 +964,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <span className="text-[11px] text-slate-400 font-bold block w-full">Quick Preset Templates:</span>
               <button
                 type="button"
-                onClick={() => setNoticeDraft('⚡ Safaricom M-Pesa STK Push is operating at instant speeds (< 3s). Extra 10% promo bonus active on deposits!')}
+                onClick={() => setNoticeDraft('⚡ Safaricom M-Pesa Buy Goods Till 1856074 is active! Pay to Till 1856074 and paste whole SMS message for instant wallet credit.')}
                 className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] cursor-pointer"
               >
-                ⚡ Instant Speed & Bonus
+                ⚡ Till 1856074 & Instant Credit
               </button>
               <button
                 type="button"
@@ -1077,7 +1077,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   className="w-full bg-[#121A2A] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500"
                 />
                 <span className="text-[10px] text-slate-400 block mt-1">
-                  Official Buy Goods Till displayed to customers across Deposit & STK Push.
+                  Official Buy Goods Till displayed to customers for deposits & SMS verification.
                 </span>
               </div>
 

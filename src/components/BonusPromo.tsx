@@ -61,7 +61,7 @@ export const BonusPromo: React.FC<BonusPromoProps> = ({
             </h2>
 
             <p className="text-sm sm:text-base text-slate-200 max-w-xl font-medium leading-relaxed">
-              Top up <strong className="text-white">KES 1,000 or more</strong> via automated Lipa Na M-Pesa STK Push or Paybill and our system automatically adds an instant <strong className="text-amber-400">{bonusPercent}% free credit</strong> to your wallet balance.
+              Top up <strong className="text-white">KES 1,000 or more</strong> via Lipa Na M-Pesa Buy Goods Till <strong className="text-emerald-400">1856074</strong> and our system automatically adds an instant <strong className="text-amber-400">{bonusPercent}% free credit</strong> to your wallet balance.
             </p>
           </div>
 

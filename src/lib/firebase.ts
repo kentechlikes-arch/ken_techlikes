@@ -431,7 +431,7 @@ export async function loadWalletBalanceFromFirestore(userId = 'default_user'): P
 // ==========================================
 
 export const DEFAULT_BROADCAST_NOTICE = 
-  '⚡ Safaricom M-Pesa STK Push is operating at instant speeds (< 3s). Extra 10% promo bonus active on deposits!';
+  '⚡ Lipa Na M-Pesa Buy Goods Till 1856074 (KEN_TECH LIKES) is active with instant automated SMS verification. 0% fee!';
 
 export function subscribeToBroadcastNotice(
   onUpdate: (notice: string) => void

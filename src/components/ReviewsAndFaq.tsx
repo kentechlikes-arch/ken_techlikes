@@ -22,7 +22,7 @@ export const ReviewsAndFaq: React.FC = () => {
       service: 'TikTok Followers & FYP Views',
       stars: 5,
       date: '2 days ago',
-      comment: 'KEN_TECH LIKES is easily the most reliable panel in East Africa. I paid via M-Pesa STK push and my 10k TikTok followers started dropping in under 2 minutes. Hit the Creator Rewards Fund threshold in one week!',
+      comment: 'KEN_TECH LIKES is easily the most reliable panel in East Africa. I paid to Till 1856074 and my 10k TikTok followers started arriving in under 2 minutes. Hit the Creator Rewards Fund threshold in one week!',
     },
     {
       name: 'Faith M.',
