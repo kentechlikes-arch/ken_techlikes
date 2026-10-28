@@ -1,12 +1,13 @@
 import React from 'react';
-import { Sparkles, ShieldCheck, Heart, Award } from 'lucide-react';
+import { Sparkles, ShieldCheck, Heart, Award, QrCode } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (tab: string) => void;
   onOpenTerms?: () => void;
+  onOpenQrCode?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenTerms }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenTerms, onOpenQrCode }) => {
   return (
     <footer className="mt-20 border-t border-slate-800/80 bg-[#080C14] text-slate-400 text-xs">
       {/* Payment methods banner */}
@@ -15,25 +16,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenTerms }) => {
           <div className="flex items-center space-x-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span className="text-slate-300 font-semibold text-xs">
-              Accepted Instant Payment Methods:
+              Official Instant Payment Gateway:
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono font-semibold">
-            <span className="px-2.5 py-1 rounded-md bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
-              🇰🇪 Safaricom Lipa Na M-Pesa STK
+            <span className="px-3 py-1 rounded-lg bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 shadow-sm flex items-center space-x-1.5">
+              <span>🇰🇪 Safaricom Lipa Na M-Pesa Buy Goods Till:</span>
+              <strong className="text-white text-xs underline decoration-emerald-400">1856074</strong>
             </span>
-            <span className="px-2.5 py-1 rounded-md bg-red-950/60 text-red-300 border border-red-500/30">
-              Airtel Money
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-blue-950/60 text-blue-300 border border-blue-500/30">
-              Visa & MasterCard
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-teal-950/60 text-teal-300 border border-teal-500/30">
-              USDT (TRC-20)
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-amber-950/60 text-amber-300 border border-amber-500/30">
-              Bitcoin (BTC)
+            <span className="px-2.5 py-1 rounded-md bg-slate-900 text-slate-300 border border-slate-700/80">
+              ⚡ Secure M-Pesa SMS Verification &bull; 0% Fee
             </span>
           </div>
         </div>
@@ -85,6 +78,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenTerms }) => {
               <li><button onClick={() => onNavigate('profile')} className="hover:text-emerald-400 cursor-pointer">Profile & Wallet</button></li>
               <li><button onClick={() => onNavigate('api')} className="hover:text-emerald-400 cursor-pointer">API Documentation</button></li>
               <li><button onClick={() => onNavigate('support')} className="hover:text-emerald-400 cursor-pointer">24/7 Support Desk</button></li>
+              {onOpenQrCode && (
+                <li>
+                  <button 
+                    onClick={onOpenQrCode} 
+                    className="text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer flex items-center space-x-1"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                    <span>Scan App QR Code</span>
+                  </button>
+                </li>
+              )}
               {onOpenTerms && (
                 <li>
                   <button 

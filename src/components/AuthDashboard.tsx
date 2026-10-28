@@ -19,7 +19,8 @@ import {
   HelpCircle,
   TrendingUp,
   Compass,
-  Check
+  Check,
+  QrCode
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
@@ -37,6 +38,7 @@ interface AuthDashboardProps {
   onSuccess: () => void;
   onOpenTerms: () => void;
   onExploreGuest?: () => void;
+  onOpenQrCode?: () => void;
   systemSettings?: SystemSettings;
   initialTab?: AuthDashboardTab;
 }
@@ -45,6 +47,7 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
   onSuccess,
   onOpenTerms,
   onExploreGuest,
+  onOpenQrCode,
   systemSettings,
   initialTab = 'login'
 }) => {
@@ -178,17 +181,32 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
           </div>
         </div>
 
-        {/* Guest preview button */}
-        {onExploreGuest && (
-          <button
-            type="button"
-            onClick={onExploreGuest}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
-          >
-            <Compass className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Explore Services as Guest</span>
-          </button>
-        )}
+        {/* Action buttons */}
+        <div className="flex items-center space-x-2">
+          {onOpenQrCode && (
+            <button
+              type="button"
+              onClick={onOpenQrCode}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer shadow-sm group"
+              title="Scan QR Code to open on mobile"
+            >
+              <QrCode className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span>Scan QR Code</span>
+            </button>
+          )}
+
+          {onExploreGuest && (
+            <button
+              type="button"
+              onClick={onExploreGuest}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
+            >
+              <Compass className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Explore Services as Guest</span>
+              <span className="sm:hidden">Guest Mode</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Dynamic Broadcast Announcement Banner if active */}
@@ -578,6 +596,16 @@ export const AuthDashboard: React.FC<AuthDashboardProps> = ({
           >
             Terms & Policy
           </button>
+          {onOpenQrCode && (
+            <button
+              type="button"
+              onClick={onOpenQrCode}
+              className="text-emerald-400 hover:text-emerald-300 flex items-center space-x-1 cursor-pointer font-medium"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              <span>App QR Code</span>
+            </button>
+          )}
         </div>
         <div className="flex items-center space-x-3 text-slate-400">
           <span>Nairobi 24/7 Helpline: {officialHelpline}</span>

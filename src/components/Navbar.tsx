@@ -19,7 +19,8 @@ import {
   KeyRound,
   UserPlus,
   FileText,
-  Scale
+  Scale,
+  QrCode
 } from 'lucide-react';
 import { Currency, ThemePreset, UserProfile } from '../types';
 import { formatCurrency } from '../data/servicesData';
@@ -42,6 +43,7 @@ interface NavbarProps {
   onLogout: () => void;
   isAdmin?: boolean;
   onOpenTerms?: () => void;
+  onOpenQrCode?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -60,6 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   isAdmin = false,
   onOpenTerms,
+  onOpenQrCode,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
@@ -430,6 +433,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
+            {/* Scan QR Code Button */}
+            {onOpenQrCode && (
+              <button
+                type="button"
+                onClick={onOpenQrCode}
+                className="hidden sm:flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 text-xs font-bold text-slate-200 hover:text-white transition-all cursor-pointer shadow-sm group"
+                title="Scan QR Code to open on mobile"
+              >
+                <QrCode className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                <span className="hidden xl:inline">Scan QR</span>
+              </button>
+            )}
+
             {/* Install / Download App Button */}
             <div className="hidden md:block">
               <DownloadAppButton />
@@ -578,7 +594,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          <div className="pt-2 flex justify-center">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+            {onOpenQrCode && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenQrCode();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-emerald-500/50 text-slate-200 text-xs font-bold flex items-center justify-center space-x-2 transition-colors cursor-pointer"
+              >
+                <QrCode className="w-4 h-4 text-emerald-400" />
+                <span>Scan App QR Code</span>
+              </button>
+            )}
             <DownloadAppButton />
           </div>
         </div>

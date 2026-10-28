@@ -131,8 +131,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [noticeSavedFeedback, setNoticeSavedFeedback] = useState(false);
 
   // Storefront & Payment Settings State
+  const [settTill, setSettTill] = useState(systemSettings?.tillNumber || '1856074');
   const [settPhone, setSettPhone] = useState(systemSettings?.paymentPhone || '0793749604');
-  const [settPaybill, setSettPaybill] = useState(systemSettings?.paybill || '522522');
+  const [settPaybill, setSettPaybill] = useState(systemSettings?.tillNumber || systemSettings?.paybill || '1856074');
   const [settEmail, setSettEmail] = useState(systemSettings?.supportEmail || 'kentechlikeS@gmail.com');
   const [settHelp, setSettHelp] = useState(systemSettings?.supportPhone || '+254 793 749 604');
   const [settBonus, setSettBonus] = useState(systemSettings?.promoBonusPercent || 10);
@@ -257,14 +258,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     e.preventDefault();
     if (onUpdateSystemSettings) {
       onUpdateSystemSettings({
+        tillNumber: settTill.trim(),
         paymentPhone: settPhone.trim(),
-        paybill: settPaybill.trim(),
+        paybill: settTill.trim(),
         supportEmail: settEmail.trim(),
         supportPhone: settHelp.trim(),
         promoBonusPercent: Number(settBonus),
       });
       setSettingsSavedFeedback(true);
-      showToast("Storefront credentials & payment details synced to Cloud Firestore and live on main web!");
+      showToast("Storefront credentials & Till 1856074 synced to Cloud Firestore and live on main web!");
       setTimeout(() => setSettingsSavedFeedback(false), 3500);
     }
   };
@@ -1060,8 +1062,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-200 block mb-1.5 flex items-center space-x-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Safaricom Lipa Na M-Pesa Buy Goods Till Number</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={settTill}
+                  onChange={(e) => {
+                    setSettTill(e.target.value);
+                    setSettPaybill(e.target.value);
+                  }}
+                  placeholder="e.g. 1856074"
+                  className="w-full bg-[#121A2A] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500"
+                />
+                <span className="text-[10px] text-slate-400 block mt-1">
+                  Official Buy Goods Till displayed to customers across Deposit & STK Push.
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-200 block mb-1.5 flex items-center space-x-1.5">
                   <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Official M-Pesa Payment Phone Number</span>
+                  <span>Operations / Helpline Phone Number</span>
                 </label>
                 <input
                   type="text"
@@ -1069,28 +1092,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   value={settPhone}
                   onChange={(e) => setSettPhone(e.target.value)}
                   placeholder="e.g. 0793749604"
-                  className="w-full bg-[#121A2A] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500"
-                />
-                <span className="text-[10px] text-slate-400 block mt-1">
-                  Shown to customers in Deposit Modal and Quick Order prompt.
-                </span>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-200 block mb-1.5 flex items-center space-x-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Safaricom Paybill / Till Number</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={settPaybill}
-                  onChange={(e) => setSettPaybill(e.target.value)}
-                  placeholder="e.g. 522522"
                   className="w-full bg-[#121A2A] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
                 />
                 <span className="text-[10px] text-slate-400 block mt-1">
-                  Official Paybill number displayed in deposit instructions.
+                  Admin operations line and support contact number.
                 </span>
               </div>
             </div>

@@ -35,6 +35,7 @@ import { ArrowLeft, Sparkles, Table as TableIcon, Lock } from 'lucide-react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { AuthModal, AuthMode } from './components/AuthModal';
 import { AuthDashboard } from './components/AuthDashboard';
+import { AppQrModal } from './components/AppQrModal';
 import { AdminPanel } from './components/AdminPanel';
 import { TermsAndPolicyModal } from './components/TermsAndPolicyModal';
 
@@ -73,6 +74,7 @@ export default function App() {
   const [theme, setTheme] = useState<ThemePreset>('emerald-obsidian');
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
   const [showCatalogInOrderTab, setShowCatalogInOrderTab] = useState(false);
 
   // Authentication & Gateway State
@@ -558,6 +560,7 @@ export default function App() {
           }}
           onOpenTerms={() => setIsTermsOpen(true)}
           onExploreGuest={() => setGuestMode(true)}
+          onOpenQrCode={() => setIsQrOpen(true)}
           systemSettings={systemSettings}
           initialTab={authMode === 'reset-password' ? 'reset-password' : authMode === 'register' ? 'register' : 'login'}
         />
@@ -565,6 +568,11 @@ export default function App() {
         <TermsAndPolicyModal
           isOpen={isTermsOpen}
           onClose={() => setIsTermsOpen(false)}
+        />
+
+        <AppQrModal
+          isOpen={isQrOpen}
+          onClose={() => setIsQrOpen(false)}
         />
       </div>
     );
@@ -594,6 +602,7 @@ export default function App() {
         onLogout={handleLogout}
         isAdmin={isAdmin}
         onOpenTerms={() => setIsTermsOpen(true)}
+        onOpenQrCode={() => setIsQrOpen(true)}
       />
 
       {/* Hero Banner (Featured on New order view) */}
@@ -717,7 +726,8 @@ export default function App() {
                   services={services}
                   onOpenTerms={() => setIsTermsOpen(true)}
                   paymentPhone={systemSettings.paymentPhone}
-                  paybill={systemSettings.paybill}
+                  paybill={systemSettings.tillNumber || systemSettings.paybill || '1856074'}
+                  tillNumber={systemSettings.tillNumber || '1856074'}
                 />
                 {/* Reviews, Credibility & FAQ right below order widget */}
                 <ReviewsAndFaq />
@@ -888,10 +898,17 @@ export default function App() {
         onClose={() => setIsTermsOpen(false)}
       />
 
+      {/* Quick Access QR Code Modal */}
+      <AppQrModal
+        isOpen={isQrOpen}
+        onClose={() => setIsQrOpen(false)}
+      />
+
       {/* Global Footer */}
       <Footer 
         onNavigate={setActiveTab} 
         onOpenTerms={() => setIsTermsOpen(true)}
+        onOpenQrCode={() => setIsQrOpen(true)}
       />
 
     </div>

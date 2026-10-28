@@ -598,8 +598,9 @@ export async function saveServicesCatalogToFirestore(services: ServiceItem[]): P
 
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   broadcastNotice: DEFAULT_BROADCAST_NOTICE,
+  tillNumber: '1856074',
   paymentPhone: '0793749604',
-  paybill: '522522',
+  paybill: '1856074',
   supportEmail: 'kentechlikeS@gmail.com',
   supportPhone: '+254 793 749 604',
   promoBonusPercent: 10,
@@ -613,7 +614,12 @@ export function subscribeToSystemSettings(
   try {
     const cached = localStorage.getItem('kentech_system_settings');
     if (cached) {
-      onUpdate(JSON.parse(cached));
+      const parsed = JSON.parse(cached);
+      onUpdate({
+        ...DEFAULT_SYSTEM_SETTINGS,
+        ...parsed,
+        tillNumber: parsed.tillNumber || '1856074',
+      });
     }
   } catch (e) {}
 
@@ -626,6 +632,7 @@ export function subscribeToSystemSettings(
         const merged: SystemSettings = {
           ...DEFAULT_SYSTEM_SETTINGS,
           ...data,
+          tillNumber: data.tillNumber || '1856074',
         };
         try {
           localStorage.setItem('kentech_system_settings', JSON.stringify(merged));

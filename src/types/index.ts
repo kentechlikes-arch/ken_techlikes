@@ -96,7 +96,7 @@ export interface TransactionRecord {
   id: string;
   type: 'deposit' | 'order' | 'refund' | 'bonus';
   amount: number; // in KES
-  method: 'M-PESA STK Push' | 'M-PESA Paybill' | 'Card' | 'Crypto (USDT)' | 'Wallet Balance';
+  method: 'M-PESA Till 1856074' | 'M-PESA STK Push' | 'Wallet Balance' | string;
   reference: string;
   status: 'Completed' | 'Pending' | 'Failed';
   timestamp: string;
@@ -106,6 +106,7 @@ export type ThemePreset = 'emerald-obsidian' | 'sapphire-cyber' | 'sunset-gold' 
 
 export interface SystemSettings {
   broadcastNotice: string;
+  tillNumber: string;
   paymentPhone: string;
   paybill: string;
   supportEmail: string;

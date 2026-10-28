@@ -19,7 +19,9 @@ import {
   Layers,
   ChevronDown,
   Zap,
-  Sliders
+  Sliders,
+  Store,
+  Wallet
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Currency, PlatformId, ServiceItem, OrderRecord } from '../types';
@@ -40,6 +42,7 @@ interface QuickOrderWidgetProps {
   onOpenTerms?: () => void;
   paymentPhone?: string;
   paybill?: string;
+  tillNumber?: string;
 }
 
 export const QuickOrderWidget: React.FC<QuickOrderWidgetProps> = ({
@@ -54,7 +57,8 @@ export const QuickOrderWidget: React.FC<QuickOrderWidgetProps> = ({
   services,
   onOpenTerms,
   paymentPhone = '0793749604',
-  paybill = '522522',
+  paybill = '1856074',
+  tillNumber = '1856074',
 }) => {
   const catalog = services || SERVICES_CATALOG;
   // Service selection
@@ -253,11 +257,7 @@ export const QuickOrderWidget: React.FC<QuickOrderWidgetProps> = ({
   const [copiedId, setCopiedId] = useState(false);
 
   // Payment & Checkout State
-  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'mpesa'>('mpesa');
-  const [mpesaPhone, setMpesaPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [stkPromptActive, setStkPromptActive] = useState(false);
-  const [stkPin, setStkPin] = useState('');
   const [lastPlacedOrder, setLastPlacedOrder] = useState<OrderRecord | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -607,24 +607,15 @@ export const QuickOrderWidget: React.FC<QuickOrderWidgetProps> = ({
       return;
     }
 
-    if (paymentMethod === 'wallet' && !hasEnoughBalance) {
-      setErrorMsg(`Insufficient wallet balance. You need ${formatCurrency(finalCostInKES, currency)}. Please top up or choose Direct M-Pesa.`);
+    if (!hasEnoughBalance) {
+      setErrorMsg(`Insufficient wallet balance. You need ${formatCurrency(finalCostInKES, currency)}. Please top up your wallet via Buy Goods Till ${tillNumber} and paste your M-Pesa SMS.`);
       return;
     }
 
-    if (paymentMethod === 'mpesa') {
-      if (!mpesaPhone || mpesaPhone.length < 10) {
-        setErrorMsg('Please enter a valid Safaricom phone number (e.g., 0712345678 or 0112345678).');
-        return;
-      }
-      setStkPromptActive(true);
-      return;
-    }
-
-    executeOrderCreation('wallet');
+    executeOrderCreation();
   };
 
-  const executeOrderCreation = (paymentSource: 'wallet' | 'mpesa', mpesaRefCode?: string) => {
+  const executeOrderCreation = () => {
     setIsSubmitting(true);
     const newOrderId = `KT-${Math.floor(10000 + Math.random() * 90000)}`;
 
@@ -642,14 +633,12 @@ export const QuickOrderWidget: React.FC<QuickOrderWidgetProps> = ({
       currentCount: Math.floor(Math.random() * 1200) + 100,
       targetCount: Math.floor(Math.random() * 1200) + 100 + quantity,
       createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', Today',
-      mpesaRef: mpesaRefCode || (paymentSource === 'mpesa' ? `QJD${Math.floor(100000 + Math.random() * 900000)}KE` : undefined),
       refillEligible: activeService.refill.toLowerCase().includes('refill'),
     };
 
     setTimeout(() => {
-      onPlaceOrder(newOrder, paymentSource);
+      onPlaceOrder(newOrder, 'wallet');
       setIsSubmitting(false);
-      setStkPromptActive(false);
       setLastPlacedOrder(newOrder);
 
       try {
@@ -660,15 +649,7 @@ export const QuickOrderWidget: React.FC<QuickOrderWidgetProps> = ({
           colors: ['#10B981', '#FF6A00', '#059669', '#3B82F6'],
         });
       } catch (err) {}
-    }, 1200);
-  };
-
-  const handleMpesaStkAuthorize = () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      const code = `QJD${Math.floor(100000 + Math.random() * 900000)}KE`;
-      executeOrderCreation('mpesa', code);
-    }, 1500);
+    }, 1000);
   };
 
   return (
@@ -1346,65 +1327,38 @@ export const QuickOrderWidget: React.FC<QuickOrderWidgetProps> = ({
                 </div>
               </div>
 
-              {/* Payment Method Selector Dropdown / Pills */}
-              <div className="space-y-2 pt-2 border-t border-slate-800/80">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                  <span>Payment Gateway:</span>
-                  <span className="text-emerald-400">Direct M-Pesa STK Push Available</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('mpesa')}
-                    className={`flex items-center space-x-2 p-2.5 rounded-xl border font-bold cursor-pointer transition-all ${
-                      paymentMethod === 'mpesa'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
-                        : 'bg-slate-900/60 text-slate-400 border-slate-800'
-                    }`}
-                  >
-                    <Smartphone className="w-4 h-4 text-emerald-400" />
-                    <span>Lipa Na M-Pesa</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('wallet')}
-                    className={`flex items-center space-x-2 p-2.5 rounded-xl border font-bold cursor-pointer transition-all ${
-                      paymentMethod === 'wallet'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
-                        : 'bg-slate-900/60 text-slate-400 border-slate-800'
-                    }`}
-                  >
-                    <CreditCard className="w-4 h-4 text-emerald-400" />
-                    <span>Wallet ({formatCurrency(walletBalance, currency)})</span>
-                  </button>
-                </div>
-
-                {paymentMethod === 'mpesa' && (
-                  <div className="pt-1 space-y-2">
-                    <label className="text-[11px] font-bold text-slate-300 block">
-                      Your Safaricom Phone Number (to receive M-Pesa prompt):
-                    </label>
-                    <input
-                      type="tel"
-                      value={mpesaPhone}
-                      onChange={(e) => setMpesaPhone(e.target.value)}
-                      placeholder="07XXXXXXXX or 01XXXXXXXX"
-                      className="w-full bg-[#121A2A] border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-emerald-300 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                    />
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                      <span>Prompt recipient line: <strong className="text-white">{mpesaPhone || 'Your Safaricom line'}</strong></span>
-                      <button
-                        type="button"
-                        onClick={onOpenDeposit}
-                        className="text-emerald-400 hover:text-emerald-300 underline font-sans font-bold"
-                      >
-                        Or pay direct to {paymentPhone} &rarr;
-                      </button>
+              {/* Wallet & Till Payment Status Box */}
+              <div className="space-y-3 pt-3 border-t border-slate-800/80">
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-slate-900 to-[#0A1322] border border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2 text-xs font-bold text-slate-300">
+                      <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Wallet Balance:</span>
+                      <span className={`font-mono font-black text-sm ${hasEnoughBalance ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        {formatCurrency(walletBalance, currency)}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 flex items-center space-x-1.5 font-mono">
+                      <span>Buy Goods Till: <strong className="text-emerald-400 font-bold">{tillNumber}</strong> (KEN_TECH LIKES)</span>
                     </div>
                   </div>
-                )}
+
+                  {!hasEnoughBalance ? (
+                    <button
+                      type="button"
+                      onClick={onOpenDeposit}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black text-xs flex items-center justify-center space-x-1.5 shadow-md shadow-emerald-950/40 cursor-pointer transition-all active:scale-95 shrink-0"
+                    >
+                      <Store className="w-3.5 h-3.5" />
+                      <span>Deposit via Till {tillNumber}</span>
+                    </button>
+                  ) : (
+                    <div className="inline-flex items-center space-x-1 text-[11px] text-emerald-400 font-bold bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-500/30">
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Balance Sufficient</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Error Message */}
@@ -1547,78 +1501,6 @@ export const QuickOrderWidget: React.FC<QuickOrderWidgetProps> = ({
         </form>
 
       </div>
-
-      {/* M-PESA STK Push Simulator Prompt Modal */}
-      {stkPromptActive && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
-          <div className="w-full max-w-sm rounded-3xl bg-[#0F172A] border border-emerald-500/50 p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center space-x-2">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="text-xs font-bold text-emerald-400 tracking-wider">
-                  SAFARICOM M-PESA STK PUSH
-                </span>
-              </div>
-              <button
-                onClick={() => setStkPromptActive(false)}
-                className="text-slate-400 hover:text-white text-xs cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="my-5 text-center space-y-3">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto ring-4 ring-emerald-500/30">
-                <Smartphone className="w-8 h-8 animate-bounce" />
-              </div>
-
-              <h3 className="text-base font-bold text-white">
-                SIM Toolkit Prompt Received
-              </h3>
-              
-              <div className="bg-[#05110E] p-3.5 rounded-xl border border-emerald-500/30 text-left font-mono text-xs text-emerald-300 space-y-1">
-                <p>Do you want to pay <strong>Ksh {finalCostInKES.toLocaleString()}</strong> to <strong>KEN TECH LIKES LTD</strong>?</p>
-                <p className="text-[11px] text-slate-400">Recipient Line: {paymentPhone} / Till: {paybill} (Ref: {activeService.id})</p>
-                <p className="text-[11px] text-emerald-400 font-bold">Prompt Sent to: {mpesaPhone || 'Your Safaricom line'}</p>
-                <p className="text-[11px] text-[#FF6A00]">Units: {quantity.toLocaleString()} {activeService.type || 'units'}</p>
-              </div>
-
-              <div className="pt-2">
-                <label className="text-xs text-slate-300 block mb-1">
-                  Enter M-Pesa PIN (Simulated):
-                </label>
-                <input
-                  type="password"
-                  maxLength={4}
-                  value={stkPin}
-                  onChange={(e) => setStkPin(e.target.value)}
-                  placeholder="&bull;&bull;&bull;&bull;"
-                  className="w-32 mx-auto text-center bg-black border border-emerald-500/60 rounded-lg py-1.5 text-base text-emerald-400 font-mono tracking-widest focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={handleMpesaStkAuthorize}
-                disabled={isSubmitting}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FF6A00] to-[#FF4500] text-white font-black text-sm transition-all shadow cursor-pointer active:scale-95"
-              >
-                {isSubmitting ? 'Verifying with Safaricom...' : 'Authorize & Pay Ksh ' + finalCostInKES.toLocaleString()}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStkPromptActive(false)}
-                className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors"
-              >
-                Cancel STK Push
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Order Placed Success Receipt Modal */}
       {lastPlacedOrder && (
