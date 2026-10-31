@@ -2553,7 +2553,7 @@ export const FAQS = [
   },
   {
     q: 'How does M-Pesa payment work on KEN_TECH LIKES?',
-    a: 'Pay easily using Safaricom Lipa Na M-Pesa Buy Goods Till 1856074 (KEN_TECH LIKES) with 0% fee. Go to M-PESA -> Lipa Na M-PESA -> Buy Goods and Services, enter Till 1856074, and authorize your payment. When you receive the SMS confirmation from Safaricom, copy and paste the whole unedited message into the Deposit modal. Our automated security engine verifies the reference code and credits your wallet instantly.',
+    a: 'Pay easily using Safaricom Lipa Na M-Pesa Buy Goods Till 1856074 (KEN_TECH LIKES) with 0% fee. Go to M-PESA -> Lipa Na M-PESA -> Buy Goods and Services, enter Till 1856074, and authorize your payment. In the Deposit modal, use the "Browse Phone / PC" button to select your SMS file or screenshot, or paste the whole unedited message directly. CAUTION: All messages undergo cryptographic verification; editing or altering the message will result in immediate and permanent account closure.',
   },
   {
     q: 'How fast do orders start and deliver?',

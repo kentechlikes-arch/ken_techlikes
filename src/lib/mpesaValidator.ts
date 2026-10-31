@@ -17,6 +17,7 @@ export interface MpesaVerificationResult {
   error?: string;
   securityFlags?: string[];
   rawText?: string;
+  isSevereFraud?: boolean;
 }
 
 const TILL_NUMBER = '1856074';
@@ -59,14 +60,38 @@ export function parseAndValidateMpesaMessage(rawMessage: string, expectedTill: s
   if (zeroWidthRegex.test(rawMessage)) {
     return {
       isValid: false,
-      error: 'Security Violation: Hidden zero-width or spoofing characters detected in the message.',
-      securityFlags: ['ZERO_WIDTH_CHARS_DETECTED']
+      error: 'CRITICAL SECURITY VIOLATION: Hidden zero-width or spoofing characters detected. Altering M-Pesa messages results in immediate account closure.',
+      securityFlags: ['ZERO_WIDTH_CHARS_DETECTED'],
+      isSevereFraud: true,
+    };
+  }
+
+  // 2. Check for manual edit indicators or chat forwarding tags
+  const editMarkerRegex = /\[edited\]|\(edited\)|\bedited\b|\bforwarded\b|\bcopy\b|\bmodified\b/i;
+  if (editMarkerRegex.test(rawMessage)) {
+    return {
+      isValid: false,
+      error: 'CRITICAL SECURITY VIOLATION: Message contains "edited" or "forwarded" markers. Editing M-Pesa messages results in permanent account closure.',
+      securityFlags: ['EDITED_MARKER_DETECTED'],
+      isSevereFraud: true,
+    };
+  }
+
+  // 3. Check for Cyrillic / Homoglyph lookalike characters used to forge Safaricom codes or text
+  // Safaricom messages are strictly standard ASCII English characters
+  const nonAsciiRegex = /[^\x20-\x7E\r\n\t]/g;
+  if (nonAsciiRegex.test(rawMessage)) {
+    return {
+      isValid: false,
+      error: 'CRITICAL SECURITY VIOLATION: Homoglyph or forged Unicode characters detected in the text. This is a severe tampering offense resulting in account closure.',
+      securityFlags: ['HOMOGLYPH_SPOOFING_ATTEMPT'],
+      isSevereFraud: true,
     };
   }
 
   const cleanText = rawMessage.trim().replace(/\r\n/g, ' ').replace(/\n/g, ' ').replace(/\s+/g, ' ');
 
-  // 2. Minimum length check - An authentic Safaricom receipt is at least 90 characters
+  // 4. Minimum length check - An authentic Safaricom receipt is at least 70 characters
   if (cleanText.length < 70) {
     return {
       isValid: false,
@@ -74,9 +99,9 @@ export function parseAndValidateMpesaMessage(rawMessage: string, expectedTill: s
     };
   }
 
-  // 3. Extract and validate Transaction Reference Code (Must start at the very beginning)
-  // Example: "TD982341KA Confirmed." or "QJD78239KA Confirmed."
-  const codeRegex = /^([A-Z0-9]{10})\s+(?:Confirmed|confirmed)\.?/i;
+  // 5. Extract and validate Transaction Reference Code (Must start at the very beginning)
+  // Safaricom reference codes are strictly 10 UPPERCASE alphanumeric characters
+  const codeRegex = /^([A-Za-z0-9]{10})\s+(?:Confirmed|confirmed)\.?/i;
   const codeMatch = cleanText.match(codeRegex);
 
   if (!codeMatch) {
@@ -86,27 +111,40 @@ export function parseAndValidateMpesaMessage(rawMessage: string, expectedTill: s
     };
   }
 
-  const code = codeMatch[1].toUpperCase();
+  const rawCode = codeMatch[1];
+  // Check if user edited the code to lowercase (Safaricom NEVER outputs lowercase reference codes)
+  if (/[a-z]/.test(rawCode)) {
+    return {
+      isValid: false,
+      error: `Security Violation: Reference code "${rawCode}" contains lowercase letters. Authentic Safaricom codes are strictly uppercase. Editing messages results in account closure.`,
+      securityFlags: ['LOWERCASE_CODE_DETECTED'],
+      isSevereFraud: true,
+    };
+  }
+
+  const code = rawCode.toUpperCase();
 
   // Validate Code structure (Safaricom reference codes are strictly 10 alphanumeric characters)
   if (BLACKLISTED_CODES.has(code) || /^([A-Z0-9])\1{9}$/.test(code)) {
     return {
       isValid: false,
-      error: `Fraud Alert: Reference code ${code} is recognized as an invalid test/dummy code.`,
-      securityFlags: ['BLACKLISTED_CODE']
+      error: `Fraud Alert: Reference code ${code} is recognized as an invalid test/dummy code. This infraction is logged and will lead to account termination.`,
+      securityFlags: ['BLACKLISTED_CODE'],
+      isSevereFraud: true,
     };
   }
 
-  // Safaricom codes start with a letter (e.g. S, T, R, Q)
+  // Safaricom codes start with standard uppercase letters (e.g. S, T, R, Q, U)
   if (!/^[A-Z][A-Z0-9]{9}$/.test(code)) {
     return {
       isValid: false,
       error: `Invalid Reference Code: "${code}" does not conform to official Safaricom 10-digit transaction standards.`,
-      securityFlags: ['NON_CONFORMING_CODE']
+      securityFlags: ['NON_CONFORMING_CODE'],
+      isSevereFraud: true,
     };
   }
 
-  // 4. Structural Integrity Checks - Must contain standard Safaricom keywords
+  // 6. Structural Integrity Checks - Must contain standard Safaricom keywords
   const requiredTokens = [
     { token: /paid to|sent to/i, name: 'paid to / sent to' },
     { token: /on\s+\d{1,2}\/\d{1,2}\/\d{2,4}/i, name: 'date ("on DD/MM/YY")' },
@@ -118,13 +156,14 @@ export function parseAndValidateMpesaMessage(rawMessage: string, expectedTill: s
     if (!token.test(cleanText)) {
       return {
         isValid: false,
-        error: `Tampered Message: Missing standard Safaricom security token: [${name}]. Please paste the original unedited message directly from Safaricom.`,
-        securityFlags: ['MISSING_STRUCTURAL_TOKEN']
+        error: `Tampered Message: Missing standard Safaricom security token: [${name}]. Please paste the original unedited message directly from Safaricom. Note: Modifying messages leads to account closure.`,
+        securityFlags: ['MISSING_STRUCTURAL_TOKEN'],
+        isSevereFraud: true,
       };
     }
   }
 
-  // 5. Recipient Verification
+  // 7. Recipient Verification
   // The message must state payment to Till 1856074 or KEN_TECH LIKES
   const recipientSegmentMatch = cleanText.match(/(?:paid to|sent to)\s+([^.]+?)\s+on\s+\d/i);
   if (!recipientSegmentMatch) {
@@ -142,11 +181,13 @@ export function parseAndValidateMpesaMessage(rawMessage: string, expectedTill: s
     return {
       isValid: false,
       error: `Recipient Mismatch: This M-Pesa payment was addressed to "${recipientSegmentMatch[1].trim()}", NOT Buy Goods Till ${expectedTill} (KEN_TECH LIKES). Payments to other accounts cannot be credited.`,
-      securityFlags: ['WRONG_RECIPIENT']
+      securityFlags: ['WRONG_RECIPIENT'],
+      isSevereFraud: false,
     };
   }
 
-  // 6. Extract Amount (Safaricom format: "Ksh1,500.00" or "Ksh 1,500.00")
+  // 8. Extract and rigorously validate Amount format (Safaricom format: "Ksh1,500.00" or "Ksh 1,500.00")
+  // Safaricom ALWAYS formats amounts with commas for thousands and exactly two decimal places
   const amountRegex = /Ksh\s*([0-9,]+(?:\.[0-9]{2})?)/i;
   const amountMatch = cleanText.match(amountRegex);
 
@@ -157,14 +198,36 @@ export function parseAndValidateMpesaMessage(rawMessage: string, expectedTill: s
     };
   }
 
-  const rawAmountStr = amountMatch[1].replace(/,/g, '');
+  const formattedAmountStr = amountMatch[1];
+  const rawAmountStr = formattedAmountStr.replace(/,/g, '');
   const amount = parseFloat(rawAmountStr);
 
   if (isNaN(amount) || amount <= 0) {
     return {
       isValid: false,
       error: 'Invalid Amount: The amount extracted from the message is invalid.',
-      securityFlags: ['INVALID_AMOUNT']
+      securityFlags: ['INVALID_AMOUNT'],
+      isSevereFraud: true,
+    };
+  }
+
+  // If amount >= 1000, Safaricom ALWAYS formats with comma (e.g. 1,000.00). If comma is missing, user manually edited the number!
+  if (amount >= 1000 && !formattedAmountStr.includes(',')) {
+    return {
+      isValid: false,
+      error: `Fraud Alert: Amount formatting "${formattedAmountStr}" lacks official Safaricom comma separation. Manual editing detected. This infraction will result in account closure.`,
+      securityFlags: ['TAMPERED_AMOUNT_COMMA'],
+      isSevereFraud: true,
+    };
+  }
+
+  // Must have two decimal places (e.g. .00)
+  if (!formattedAmountStr.includes('.')) {
+    return {
+      isValid: false,
+      error: `Tampered Amount: Official Safaricom receipts always contain decimal cents (e.g. Ksh${amount.toLocaleString()}.00). Unedited message required.`,
+      securityFlags: ['MISSING_CENTS_DECIMAL'],
+      isSevereFraud: true,
     };
   }
 
@@ -175,7 +238,7 @@ export function parseAndValidateMpesaMessage(rawMessage: string, expectedTill: s
     };
   }
 
-  // 7. Date & Time Freshness Validation
+  // 9. Date & Time Freshness Validation
   // Safaricom format: "on 27/10/26 at 10:45 AM" or "on 27/10/2026 at 10:45 AM"
   const dateTimeRegex = /on\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+at\s+(\d{1,2}):(\d{2})\s*(AM|PM)/i;
   const dateMatch = cleanText.match(dateTimeRegex);
@@ -325,4 +388,59 @@ export async function lockMpesaCodeClaim(
   } catch (error) {
     console.warn('Failed to lock mpesa_claims in Firestore:', error);
   }
+}
+
+/**
+ * Records fraudulent tampering attempts and enforces account closure.
+ */
+export async function recordFraudAttemptAndCheckClosure(
+  userId: string = 'guest',
+  reason: string,
+  rawSnippet: string
+): Promise<{ accountClosed: boolean; warning: string }> {
+  const cleanReason = reason || 'Attempted SMS forgery/alteration';
+
+  // 1. Local infraction tracking
+  let infractionCount = 1;
+  try {
+    const existing = localStorage.getItem('kt_security_infractions');
+    infractionCount = existing ? parseInt(existing, 10) + 1 : 1;
+    localStorage.setItem('kt_security_infractions', infractionCount.toString());
+    if (infractionCount >= 2) {
+      localStorage.setItem('kt_account_closed_reason', cleanReason);
+    }
+  } catch (e) {}
+
+  // 2. Firestore audit log
+  try {
+    const infractionId = `FRAUD-${Date.now()}`;
+    await setDoc(doc(db, 'security_fraud_logs', infractionId), {
+      id: infractionId,
+      userId,
+      email: auth.currentUser?.email || 'guest',
+      reason: cleanReason,
+      rawSnippet: rawSnippet.substring(0, 150),
+      timestamp: new Date().toISOString(),
+      actionTaken: infractionCount >= 2 ? 'ACCOUNT_CLOSED' : 'FORMAL_WARNING_ISSUED',
+    });
+
+    if (userId && userId !== 'guest' && infractionCount >= 2) {
+      await setDoc(doc(db, 'users', userId), {
+        isSuspended: true,
+        accountClosed: true,
+        closureReason: cleanReason,
+        closedAt: new Date().toISOString(),
+      }, { merge: true });
+    }
+  } catch (err) {
+    console.warn('Security logging error:', err);
+  }
+
+  const accountClosed = infractionCount >= 2;
+  return {
+    accountClosed,
+    warning: accountClosed
+      ? 'ACCOUNT PERMANENTLY CLOSED: Repeated attempts to submit edited or fabricated M-Pesa messages. All services have been revoked.'
+      : 'FORMAL FRAUD CAUTION: Altering M-Pesa messages violates Kenyan Cybercrimes laws. Submitting another edited message will trigger immediate and irreversible account closure.',
+  };
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, 
   Copy, 
@@ -13,9 +13,15 @@ import {
   ShieldAlert,
   ClipboardPaste,
   Lock,
-  ArrowRight
+  ArrowRight,
+  FolderOpen,
+  AlertTriangle,
+  Loader2,
+  ShieldX,
+  FileText
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import Tesseract from 'tesseract.js';
 import { Currency, SystemSettings } from '../types';
 import { formatCurrency } from '../data/servicesData';
 import { SUPPORT_EMAIL, SUPPORT_PHONE, auth } from '../lib/firebase';
@@ -23,6 +29,7 @@ import {
   parseAndValidateMpesaMessage, 
   checkMpesaCodeAlreadyClaimed, 
   lockMpesaCodeClaim,
+  recordFraudAttemptAndCheckClosure,
   MpesaVerificationResult 
 } from '../lib/mpesaValidator';
 
@@ -48,11 +55,21 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const officialHelpline = systemSettings?.supportPhone || SUPPORT_PHONE;
   const officialEmail = systemSettings?.supportEmail || SUPPORT_EMAIL;
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [rawMessage, setRawMessage] = useState('');
   const [copiedTill, setCopiedTill] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [securityNotice, setSecurityNotice] = useState<string | null>(null);
+
+  // File browse & OCR state
+  const [isScanningImage, setIsScanningImage] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [fileStatusMessage, setFileStatusMessage] = useState<string | null>(null);
+
+  // Account Closure / Ban state
+  const [isAccountClosed, setIsAccountClosed] = useState(false);
+  const [accountClosedReason, setAccountClosedReason] = useState<string | null>(null);
 
   // Live parsed preview
   const [parsedPreview, setParsedPreview] = useState<MpesaVerificationResult | null>(null);
@@ -63,6 +80,18 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     dateTime: string; 
     methodTitle: string 
   } | null>(null);
+
+  // Check if account has been closed due to tampering
+  useEffect(() => {
+    try {
+      const closedReason = localStorage.getItem('kt_account_closed_reason');
+      const infractions = localStorage.getItem('kt_security_infractions');
+      if (closedReason || (infractions && parseInt(infractions, 10) >= 2)) {
+        setIsAccountClosed(true);
+        setAccountClosedReason(closedReason || 'Permanent closure due to repeated M-Pesa SMS forgery attempts.');
+      }
+    } catch (e) {}
+  }, [isOpen]);
 
   const handleCopyTill = () => {
     navigator.clipboard.writeText(officialTill);
@@ -76,12 +105,84 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         const text = await navigator.clipboard.readText();
         if (text) {
           setRawMessage(text);
+          setFileStatusMessage('📋 Pasted directly from clipboard');
           runLiveInspection(text);
         }
       }
     } catch {
       // Clipboard permission denied or unsupported
     }
+  };
+
+  // Browse phone or desktop file (Text or Image screenshot)
+  const handleFileChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFileStatusMessage(null);
+    setErrorMessage(null);
+    setSecurityNotice(null);
+
+    // 1. Text file handling (.txt, .log, .csv, text/*)
+    if (file.type.startsWith('text/') || /\.(txt|log|csv|text)$/i.test(file.name)) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = (event.target?.result as string) || '';
+        if (content.trim()) {
+          setRawMessage(content);
+          runLiveInspection(content);
+          setFileStatusMessage(`📄 Loaded from ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+        } else {
+          setErrorMessage('The selected file is empty. Please select a valid M-Pesa SMS text file.');
+        }
+      };
+      reader.onerror = () => {
+        setErrorMessage('Unable to read selected text file. Please copy and paste the SMS text manually.');
+      };
+      reader.readAsText(file);
+      // Reset input value so user can pick same file again if desired
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // 2. Image / Screenshot OCR handling (.png, .jpg, .jpeg, .webp, image/*)
+    if (file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name)) {
+      setIsScanningImage(true);
+      setScanProgress(10);
+      setFileStatusMessage(`📷 Scanning screenshot "${file.name}" with OCR engine...`);
+
+      try {
+        const result = await Tesseract.recognize(file, 'eng', {
+          logger: (m) => {
+            if (m.status === 'recognizing text' && m.progress) {
+              setScanProgress(Math.round(m.progress * 100));
+            }
+          }
+        });
+
+        const recognizedText = result?.data?.text ? result.data.text.trim() : '';
+        if (recognizedText) {
+          // Normalize linebreaks and extra spaces from OCR
+          const cleanedText = recognizedText.replace(/\r\n/g, ' ').replace(/\n/g, ' ').replace(/\s+/g, ' ');
+          setRawMessage(cleanedText);
+          runLiveInspection(cleanedText);
+          setFileStatusMessage(`✅ OCR extracted SMS text from "${file.name}"`);
+        } else {
+          setErrorMessage('Could not extract readable M-Pesa text from this screenshot. Please ensure the screenshot is clear or paste the text directly.');
+        }
+      } catch (ocrErr) {
+        console.warn('OCR error:', ocrErr);
+        setErrorMessage('Automatic image scanning encountered an issue. Please paste the SMS text directly from your phone.');
+      } finally {
+        setIsScanningImage(false);
+        setScanProgress(0);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    setErrorMessage(`Unsupported file format (${file.name}). Please browse for an SMS screenshot (.png, .jpg) or text file (.txt).`);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const runLiveInspection = (text: string) => {
@@ -115,8 +216,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     setErrorMessage(null);
     setSecurityNotice(null);
 
+    if (isAccountClosed) {
+      setErrorMessage('Your account is permanently closed due to prior security infractions.');
+      return;
+    }
+
     if (!rawMessage.trim()) {
-      setErrorMessage('Please paste the whole M-Pesa SMS message you received from Safaricom.');
+      setErrorMessage('Please paste or browse the whole M-Pesa SMS message you received from Safaricom.');
       return;
     }
 
@@ -129,8 +235,22 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       if (!result.isValid || !result.code || !result.amount) {
         setIsVerifying(false);
         setErrorMessage(result.error || 'The message could not be verified. Please do not edit any text.');
+        
         if (result.securityFlags && result.securityFlags.length > 0) {
           setSecurityNotice(result.error || 'Fraud Prevention: Altered or mismatched M-Pesa message detected.');
+
+          // Log security infraction and check for automatic account closure
+          if (result.isSevereFraud) {
+            const closureOutcome = await recordFraudAttemptAndCheckClosure(
+              auth.currentUser?.uid || 'guest',
+              result.error || 'Attempted SMS forgery/alteration',
+              rawMessage
+            );
+            if (closureOutcome.accountClosed) {
+              setIsAccountClosed(true);
+              setAccountClosedReason(closureOutcome.warning);
+            }
+          }
         }
         return;
       }
@@ -139,7 +259,18 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       const isAlreadyClaimed = await checkMpesaCodeAlreadyClaimed(result.code);
       if (isAlreadyClaimed) {
         setIsVerifying(false);
-        setSecurityNotice(`Fraud Prevention: Reference code ${result.code} has already been verified and credited. Re-submitting used M-Pesa receipts is strictly prohibited and logged.`);
+        const duplicateWarning = `Fraud Alert: Reference code ${result.code} has already been verified and credited. Re-submitting used M-Pesa receipts is strictly prohibited and results in account closure.`;
+        setSecurityNotice(duplicateWarning);
+        
+        const closureOutcome = await recordFraudAttemptAndCheckClosure(
+          auth.currentUser?.uid || 'guest',
+          `Re-submitting already claimed code: ${result.code}`,
+          rawMessage
+        );
+        if (closureOutcome.accountClosed) {
+          setIsAccountClosed(true);
+          setAccountClosedReason(closureOutcome.warning);
+        }
         return;
       }
 
@@ -215,8 +346,51 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 space-y-5">
           
-          {/* Success Screen If Verified */}
-          {successReceipt ? (
+          {/* Account Closed Screen If Blacklisted */}
+          {isAccountClosed ? (
+            <div className="text-center py-6 px-2 space-y-4 animate-in fade-in">
+              <div className="w-16 h-16 rounded-3xl bg-rose-500/20 text-rose-500 border border-rose-500/30 flex items-center justify-center mx-auto ring-4 ring-rose-500/20 shadow-xl">
+                <ShieldX className="w-9 h-9" />
+              </div>
+
+              <div className="space-y-1">
+                <div className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 text-xs font-bold mb-1">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Permanent Security Suspension</span>
+                </div>
+                <h4 className="text-xl sm:text-2xl font-black text-white">Account Permanently Closed</h4>
+                <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed pt-1">
+                  Pursuant to KEN_TECH LIKES Anti-Fraud Policy and the Kenya Computer Misuse and Cybercrimes Act, your account has been terminated due to submitting forged, edited, or manipulated Safaricom M-Pesa SMS messages.
+                </p>
+              </div>
+
+              <div className="max-w-md mx-auto p-4 rounded-2xl bg-rose-950/70 border border-rose-500/50 text-left text-xs font-mono space-y-2 shadow-xl">
+                <div className="flex justify-between border-b border-rose-900/60 pb-1.5">
+                  <span className="text-rose-400/80">Action:</span>
+                  <span className="text-rose-300 font-bold">TERMINATION & BLACKLISTING</span>
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-rose-400/80">Violation Cause:</span>
+                  <span className="text-white text-[11px] leading-relaxed break-words">
+                    {accountClosedReason || 'Attempted M-Pesa SMS forgery/alteration'}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-400">
+                To appeal or inquire, email our compliance team at{' '}
+                <a href={`mailto:${officialEmail}`} className="text-emerald-400 font-mono underline">{officialEmail}</a>.
+              </p>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold cursor-pointer transition-colors"
+              >
+                Close Window
+              </button>
+            </div>
+          ) : successReceipt ? (
             <div className="text-center py-6 space-y-4">
               <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto ring-4 ring-emerald-500/30 animate-in zoom-in">
                 <CheckCircle2 className="w-10 h-10" />
@@ -321,22 +495,33 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   <li>Open M-PESA &rarr; Select <strong>Lipa Na M-PESA</strong> &rarr; <strong>Buy Goods and Services</strong></li>
                   <li>Enter Till Number: <strong className="text-emerald-400 font-mono font-bold text-xs">{officialTill}</strong></li>
                   <li>Enter Amount, confirm recipient is <strong>KEN_TECH LIKES</strong>, and enter your PIN</li>
-                  <li>Copy and paste the <strong>entire M-PESA confirmation SMS</strong> below:</li>
+                  <li>Browse file/screenshot or copy and paste the <strong>entire unedited M-PESA SMS</strong> below:</li>
                 </ol>
+              </div>
+
+              {/* MANDATORY HIGH-SECURITY CAUTION BANNER: EDITING MESSAGE = ACCOUNT CLOSURE */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-red-950/90 via-slate-950 to-amber-950/70 border-2 border-red-500/60 text-red-200 text-xs space-y-1.5 shadow-xl animate-in fade-in">
+                <div className="flex items-center space-x-2 text-red-400 font-black tracking-wide uppercase text-[11px]">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-red-400 animate-pulse" />
+                  <span>Security Caution: Zero Tolerance for Altered Messages</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-slate-200 font-medium">
+                  <strong className="text-red-400 font-bold uppercase">Caution:</strong> All submitted M-Pesa SMS messages undergo cryptographic signature checks and timestamp validation. <strong className="text-white underline decoration-red-500 underline-offset-2">Editing, altering amounts, or submitting fake messages WILL RESULT IN IMMEDIATE AND PERMANENT ACCOUNT CLOSURE</strong>, forfeiture of all balances, and blacklisting with Safaricom fraud tracking.
+                </p>
               </div>
 
               {/* Fraud Warning / Security Alert */}
               {securityNotice && (
-                <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs space-y-1 shadow-lg animate-in fade-in">
+                <div className="p-3.5 rounded-2xl bg-rose-950/90 border border-rose-500/60 text-rose-200 text-xs space-y-1 shadow-lg animate-in fade-in">
                   <div className="flex items-center space-x-1.5 font-bold text-rose-400">
                     <ShieldAlert className="w-4 h-4 shrink-0" />
-                    <span>Security & Anti-Tamper Alert</span>
+                    <span>Security & Anti-Tamper Violation Alert</span>
                   </div>
-                  <p className="text-[11px] leading-relaxed text-rose-200">
+                  <p className="text-[11px] leading-relaxed text-rose-200 font-semibold">
                     {securityNotice}
                   </p>
-                  <p className="text-[10px] text-rose-400/80 pt-0.5">
-                    Note: Edited amounts, modified codes, or altered timestamps are automatically rejected.
+                  <p className="text-[10px] text-rose-400 pt-0.5 font-medium">
+                    Warning: Repeating this attempt will trigger instant and permanent account closure.
                   </p>
                 </div>
               )}
@@ -349,24 +534,84 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 </div>
               )}
 
-              {/* Verification Form: Paste Whole M-Pesa Message */}
+              {/* Verification Form: Paste / Browse Whole M-Pesa Message */}
               <form onSubmit={handleVerifyMessage} className="space-y-3">
+                {/* Hidden File Input for Phone & Desktop Browsing */}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChosen} 
+                  accept=".txt,.text,.log,.csv,image/*" 
+                  className="hidden" 
+                />
+
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-200">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-slate-200">
                     <label className="flex items-center space-x-1.5">
                       <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Paste Whole M-Pesa SMS Message:</span>
+                      <span>Whole M-Pesa SMS Message:</span>
                     </label>
 
-                    <button
-                      type="button"
-                      onClick={handleQuickPaste}
-                      className="text-emerald-400 hover:text-emerald-300 font-bold text-[11px] flex items-center space-x-1 cursor-pointer bg-slate-900 px-2 py-0.5 rounded border border-slate-700 hover:border-emerald-500/50 transition-colors"
-                    >
-                      <ClipboardPaste className="w-3 h-3" />
-                      <span>Paste SMS</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      {/* BROWSE BUTTON FOR PHONE & DESKTOP */}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isScanningImage}
+                        className="text-amber-400 hover:text-amber-300 font-bold text-[11px] flex items-center space-x-1.5 cursor-pointer bg-slate-900 hover:bg-slate-800 px-3 py-1 rounded-lg border border-amber-500/40 hover:border-amber-400 transition-colors shadow-sm disabled:opacity-50"
+                        title="Browse your phone or desktop to upload M-Pesa SMS text file or screenshot"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Browse Phone / PC</span>
+                      </button>
+
+                      {/* QUICK PASTE BUTTON */}
+                      <button
+                        type="button"
+                        onClick={handleQuickPaste}
+                        className="text-emerald-400 hover:text-emerald-300 font-bold text-[11px] flex items-center space-x-1 cursor-pointer bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 hover:border-emerald-500/50 transition-colors"
+                      >
+                        <ClipboardPaste className="w-3.5 h-3.5" />
+                        <span>Paste SMS</span>
+                      </button>
+                    </div>
                   </div>
+
+                  {/* OCR Scanning Progress Box */}
+                  {isScanningImage && (
+                    <div className="p-3 rounded-xl bg-blue-950/70 border border-blue-500/40 text-blue-200 text-xs space-y-1.5 animate-in fade-in">
+                      <div className="flex items-center justify-between text-[11px] font-mono">
+                        <span className="flex items-center space-x-1.5">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                          <span>Scanning M-Pesa screenshot OCR...</span>
+                        </span>
+                        <span className="font-bold text-blue-300">{scanProgress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-blue-500 to-cyan-400 h-1.5 transition-all duration-300 rounded-full" 
+                          style={{ width: `${Math.max(10, scanProgress)}%` }} 
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* File Upload Status Pill */}
+                  {fileStatusMessage && !isScanningImage && (
+                    <div className="text-[11px] text-emerald-300 font-mono bg-emerald-950/50 border border-emerald-500/30 px-3 py-1.5 rounded-xl flex items-center justify-between">
+                      <span className="flex items-center space-x-1.5 truncate">
+                        <FileText className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span className="truncate">{fileStatusMessage}</span>
+                      </span>
+                      <button 
+                        type="button" 
+                        onClick={() => setFileStatusMessage(null)} 
+                        className="text-slate-400 hover:text-white ml-2 text-sm leading-none cursor-pointer"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  )}
 
                   <div className="relative">
                     <textarea
@@ -379,7 +624,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
-                    <span>Paste complete SMS directly from Safaricom without editing</span>
+                    <span>Must be complete original SMS. Editing message triggers account closure.</span>
                     <span className="font-mono">{rawMessage.length} characters</span>
                   </div>
                 </div>
