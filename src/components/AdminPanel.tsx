@@ -1077,7 +1077,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   className="w-full bg-[#121A2A] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500"
                 />
                 <span className="text-[10px] text-slate-400 block mt-1">
-                  Official Buy Goods Till displayed to customers for deposits & SMS verification.
+                  Official Buy Goods Till displayed to customers for STK prompts & SMS verification.
                 </span>
               </div>
 

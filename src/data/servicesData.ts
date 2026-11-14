@@ -2545,7 +2545,7 @@ export const INITIAL_TRANSACTIONS = [
 export const FAQS = [
   {
     q: 'What is KEN_TECH LIKES and how does it compare to Duka La Likes?',
-    a: 'KEN_TECH LIKES is Kenya and East Africa\'s premier automated SMM panel and social media growth engine. Just like dukalalikes.com, we offer instant automated delivery for TikTok, Instagram, YouTube, Facebook, Telegram, WhatsApp Channels, Google Maps Reviews, and X, backed by Lipa Na M-Pesa Buy Goods Till 1856074 payments, real Kenyan engagement options, 24/7 support, and 0% drop refill guarantees.',
+    a: 'KEN_TECH LIKES is Kenya and East Africa\'s premier automated SMM panel and social media growth engine. Just like dukalalikes.com, we offer instant automated delivery for TikTok, Instagram, YouTube, Facebook, Telegram, WhatsApp Channels, Google Maps Reviews, and X, backed by our instant Lipa Na M-Pesa Buy Goods Till 1856074 Prompt Service (STK Push) and SMS verification, real Kenyan engagement options, 24/7 support, and 0% drop refill guarantees.',
   },
   {
     q: 'Do I need to share my social media account passwords?',
@@ -2553,7 +2553,7 @@ export const FAQS = [
   },
   {
     q: 'How does M-Pesa payment work on KEN_TECH LIKES?',
-    a: 'Pay easily using Safaricom Lipa Na M-Pesa Buy Goods Till 1856074 (KEN_TECH LIKES) with 0% fee. Go to M-PESA -> Lipa Na M-PESA -> Buy Goods and Services, enter Till 1856074, and authorize your payment. In the Deposit modal, use the "Browse Phone / PC" button to select your SMS file or screenshot, or paste the whole unedited message directly. CAUTION: All messages undergo cryptographic verification; editing or altering the message will result in immediate and permanent account closure.',
+    a: 'KEN_TECH LIKES integrates Safaricom Lipa Na M-Pesa Buy Goods Till 1856074 Prompt Service directly into both Order Checkout and Wallet Top Up. Simply enter your Safaricom number to receive an automatic M-Pesa PIN prompt for Till 1856074 (KEN_TECH LIKES) with 0% fee, and your wallet or order is credited immediately upon confirmation. Alternatively, you may pay manually to Till 1856074 and use the "Browse Phone / PC" button or paste the whole unedited M-Pesa SMS for verification. CAUTION: All messages undergo cryptographic verification; editing or altering a message will result in immediate and permanent account closure.',
   },
   {
     q: 'How fast do orders start and deliver?',

@@ -18,7 +18,10 @@ import {
   AlertTriangle,
   Loader2,
   ShieldX,
-  FileText
+  FileText,
+  Smartphone,
+  RefreshCw,
+  Send
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import Tesseract from 'tesseract.js';
@@ -47,15 +50,30 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   onClose,
   currency,
   onDepositSuccess,
+  userPhoneNumber,
   systemSettings,
 }) => {
-  if (!isOpen) return null;
-
   const officialTill = systemSettings?.tillNumber || '1856074';
   const officialHelpline = systemSettings?.supportPhone || SUPPORT_PHONE;
   const officialEmail = systemSettings?.supportEmail || SUPPORT_EMAIL;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pollTimerRef = useRef<number | null>(null);
+
+  // Payment mode: 'prompt' (Till STK Push) or 'sms' (Manual Till Pay + Paste/Browse SMS)
+  const [paymentMode, setPaymentMode] = useState<'prompt' | 'sms'>('prompt');
+
+  // STK Prompt states
+  const [stkPhone, setStkPhone] = useState(userPhoneNumber || '');
+  const [stkAmount, setStkAmount] = useState<string>('500');
+  const [isSendingPrompt, setIsSendingPrompt] = useState(false);
+  const [stkCheckoutId, setStkCheckoutId] = useState<string | null>(null);
+  const [stkPromptStatusMsg, setStkPromptStatusMsg] = useState<string | null>(null);
+  const [stkMissingVars, setStkMissingVars] = useState<string[]>([]);
+  const [darajaReady, setDarajaReady] = useState<boolean | null>(null);
+  const [darajaEnv, setDarajaEnv] = useState<string>('production');
+
+  // Manual SMS verification states
   const [rawMessage, setRawMessage] = useState('');
   const [copiedTill, setCopiedTill] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -81,8 +99,16 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     methodTitle: string 
   } | null>(null);
 
-  // Check if account has been closed due to tampering
   useEffect(() => {
+    if (userPhoneNumber && !stkPhone) {
+      setStkPhone(userPhoneNumber);
+    }
+  }, [userPhoneNumber]);
+
+  // Check Daraja readiness & account closure state whenever modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+
     try {
       const closedReason = localStorage.getItem('kt_account_closed_reason');
       const infractions = localStorage.getItem('kt_security_infractions');
@@ -91,7 +117,178 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         setAccountClosedReason(closedReason || 'Permanent closure due to repeated M-Pesa SMS forgery attempts.');
       }
     } catch (e) {}
+
+    fetch('/api/mpesa/status')
+      .then((res) => res.json())
+      .then((data) => {
+        setDarajaReady(Boolean(data.configured));
+        setDarajaEnv(data.env || 'production');
+        setStkMissingVars(Array.isArray(data.missingVars) ? data.missingVars : []);
+      })
+      .catch(() => {
+        setDarajaReady(false);
+      });
+
+    return () => {
+      if (pollTimerRef.current !== null) {
+        window.clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
   }, [isOpen]);
+
+  const stopStkPolling = () => {
+    if (pollTimerRef.current !== null) {
+      window.clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  };
+
+  const checkStkStatusOnce = async (checkoutId: string, requestedAmount: number) => {
+    try {
+      const res = await fetch(`/api/mpesa/stk-status/${encodeURIComponent(checkoutId)}`);
+      const data = await res.json();
+
+      if (data.status === 'completed') {
+        stopStkPolling();
+        const receiptCode = String(data.mpesaReceiptNumber || `STK-${checkoutId.slice(-8)}`).toUpperCase();
+        const verifiedAmount = Number(data.amount || requestedAmount);
+
+        const alreadyClaimed = await checkMpesaCodeAlreadyClaimed(receiptCode);
+        if (alreadyClaimed) {
+          setStkCheckoutId(null);
+          setErrorMessage(`Reference ${receiptCode} has already been credited.`);
+          return;
+        }
+
+        await lockMpesaCodeClaim(
+          receiptCode,
+          verifiedAmount,
+          `DARAJA_STK_TILL_${officialTill}_${checkoutId}`,
+          auth.currentUser?.uid || 'client'
+        );
+
+        onDepositSuccess(
+          verifiedAmount,
+          `M-PESA Till ${officialTill} Prompt`,
+          receiptCode
+        );
+
+        setStkCheckoutId(null);
+        setStkPromptStatusMsg(null);
+        setSuccessReceipt({
+          amount: verifiedAmount,
+          ref: receiptCode,
+          dateTime: new Date().toLocaleString(),
+          methodTitle: `Lipa Na M-Pesa Till ${officialTill} (KEN_TECH LIKES)`,
+        });
+
+        try {
+          confetti({
+            particleCount: 120,
+            spread: 90,
+            origin: { y: 0.6 },
+            colors: ['#10B981', '#34D399', '#059669', '#3B82F6'],
+          });
+        } catch (err) {}
+      } else if (data.status === 'cancelled' || data.status === 'failed') {
+        stopStkPolling();
+        setStkCheckoutId(null);
+        setStkPromptStatusMsg(null);
+        setErrorMessage(data.resultDesc || 'M-Pesa prompt was cancelled or timed out. You can retry or verify via SMS.');
+      } else if (data.resultDesc) {
+        setStkPromptStatusMsg(data.resultDesc);
+      }
+    } catch {
+      // Keep polling silently on transient network error
+    }
+  };
+
+  const handleSendStkPrompt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSecurityNotice(null);
+
+    if (isAccountClosed) {
+      setErrorMessage('Your account is permanently closed due to prior security infractions.');
+      return;
+    }
+
+    const numericAmt = Math.round(Number(stkAmount));
+    if (!Number.isFinite(numericAmt) || numericAmt < 50) {
+      setErrorMessage('Minimum M-Pesa deposit is KES 50.');
+      return;
+    }
+
+    if (!stkPhone.trim()) {
+      setErrorMessage('Please enter your Safaricom M-Pesa phone number (e.g. 07XXXXXXXX).');
+      return;
+    }
+
+    setIsSendingPrompt(true);
+    try {
+      const res = await fetch('/api/mpesa/stk-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumber: stkPhone.trim(),
+          amount: numericAmt,
+          tillNumber: officialTill,
+          userId: auth.currentUser?.uid || 'guest',
+        }),
+      });
+
+      const rawText = await res.text();
+      let data: any = null;
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        data = null;
+      }
+
+      if (!data) {
+        setIsSendingPrompt(false);
+        setErrorMessage(
+          `M-Pesa gateway returned an unexpected response (HTTP ${res.status}). Ensure the backend server is running or use the "Paste / Browse SMS" tab.`
+        );
+        return;
+      }
+
+      if (!res.ok || !data.success) {
+        setIsSendingPrompt(false);
+        if (Array.isArray(data.missingVars)) {
+          setStkMissingVars(data.missingVars);
+          setDarajaReady(false);
+        }
+        setErrorMessage(data.error || `Could not dispatch M-Pesa Till prompt (HTTP ${res.status}).`);
+        return;
+      }
+
+      const checkoutId = String(data.checkoutRequestId);
+      setIsSendingPrompt(false);
+      setStkCheckoutId(checkoutId);
+      setStkPromptStatusMsg(
+        data.customerMessage ||
+          `M-Pesa PIN prompt sent to ${data.normalizedPhone}. Check your phone screen and enter your M-Pesa PIN for Till ${officialTill}.`
+      );
+
+      stopStkPolling();
+      let attempts = 0;
+      pollTimerRef.current = window.setInterval(() => {
+        attempts += 1;
+        if (attempts > 30) {
+          stopStkPolling();
+          setStkPromptStatusMsg('Still awaiting Safaricom confirmation. Click "Check Payment Now" after entering PIN, or verify with SMS.');
+          return;
+        }
+        checkStkStatusOnce(checkoutId, numericAmt);
+      }, 3000);
+    } catch (err) {
+      setIsSendingPrompt(false);
+      const detail = err instanceof Error && err.message ? ` (${err.message})` : '';
+      setErrorMessage(`Network error connecting to payment gateway${detail}. Please try again or use SMS verification.`);
+    }
+  };
 
   const handleCopyTill = () => {
     navigator.clipboard.writeText(officialTill);
@@ -312,6 +509,8 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
       <div className="w-full max-w-lg rounded-3xl bg-[#0D1424] border border-slate-800 shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 my-8">
@@ -479,12 +678,206 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
                   <span className="flex items-center space-x-1 text-emerald-400 font-semibold">
                     <Zap className="w-3.5 h-3.5" />
-                    <span>0% Transaction Fee (Free on Safaricom)</span>
+                    <span>0% Transaction Fee &bull; KES Only</span>
                   </span>
                   <span>Min: KES 50</span>
                 </div>
               </div>
 
+              {/* Payment Method Selector Tabs */}
+              <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-slate-900 border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentMode('prompt');
+                    setErrorMessage(null);
+                  }}
+                  className={`py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                    paymentMode === 'prompt'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Till Prompt (STK Push)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentMode('sms');
+                    setErrorMessage(null);
+                  }}
+                  className={`py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                    paymentMode === 'sms'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Paste / Browse SMS</span>
+                </button>
+              </div>
+
+              {paymentMode === 'prompt' ? (
+                <div className="space-y-4 animate-in fade-in">
+                  {darajaReady === false && (
+                    <div className="p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/40 text-amber-200 text-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-amber-400 flex items-center space-x-1.5">
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                          <span>Daraja API Keys Required for Live SIM Prompt</span>
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 uppercase">
+                          {darajaEnv}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        To send direct STK PIN prompts from Till <strong className="text-white">{officialTill}</strong> to customer phones, configure your Safaricom Daraja secrets ({stkMissingVars.length > 0 ? stkMissingVars.join(', ') : 'MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_PASSKEY'}) in environment secrets.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentMode('sms');
+                          setErrorMessage(null);
+                        }}
+                        className="inline-flex items-center space-x-1.5 text-[11px] font-black text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
+                      >
+                        <span>Pay to Till {officialTill} & Verify SMS Now</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {errorMessage && (
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center space-x-2 font-medium">
+                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
+
+                  {stkCheckoutId ? (
+                    <div className="p-5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-center space-y-4">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-base font-black text-white">Check Your Phone for M-Pesa PIN Prompt</h4>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          {stkPromptStatusMsg || `Enter your M-Pesa PIN on ${stkPhone} to pay KES ${Number(stkAmount).toLocaleString()} to Till ${officialTill} (KEN_TECH LIKES).`}
+                        </p>
+                        <p className="text-[10px] font-mono text-slate-400 pt-1">
+                          Checkout Ref: {stkCheckoutId}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => checkStkStatusOnce(stkCheckoutId, Number(stkAmount))}
+                          className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs flex items-center justify-center space-x-1.5 cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Check Payment Now</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            stopStkPolling();
+                            setStkCheckoutId(null);
+                            setStkPromptStatusMsg(null);
+                            setPaymentMode('sms');
+                          }}
+                          className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs cursor-pointer"
+                        >
+                          Verify via SMS Instead
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSendStkPrompt} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-200 block">
+                          Safaricom M-Pesa Phone Number
+                        </label>
+                        <div className="relative">
+                          <Smartphone className="w-4 h-4 text-emerald-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="tel"
+                            required
+                            value={stkPhone}
+                            onChange={(e) => {
+                              setStkPhone(e.target.value);
+                              setErrorMessage(null);
+                            }}
+                            placeholder="07XXXXXXXX or 01XXXXXXXX"
+                            className="w-full bg-[#090D16] border border-slate-700 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-sm font-mono text-white placeholder-slate-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-200">
+                          <label>Amount (KES)</label>
+                          <span className="text-[11px] font-mono text-emerald-400">Min: KES 50</span>
+                        </div>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono font-black text-emerald-400">
+                            KES
+                          </span>
+                          <input
+                            type="number"
+                            min={50}
+                            max={150000}
+                            required
+                            value={stkAmount}
+                            onChange={(e) => {
+                              setStkAmount(e.target.value);
+                              setErrorMessage(null);
+                            }}
+                            className="w-full bg-[#090D16] border border-slate-700 focus:border-emerald-500 rounded-xl pl-12 pr-4 py-3 text-base font-mono font-black text-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {[100, 250, 500, 1000, 2500, 5000].map((amt) => (
+                            <button
+                              key={amt}
+                              type="button"
+                              onClick={() => setStkAmount(String(amt))}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-colors cursor-pointer ${
+                                Number(stkAmount) === amt
+                                  ? 'bg-emerald-500 text-black'
+                                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                              }`}
+                            >
+                              KES {amt.toLocaleString()}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSendingPrompt}
+                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black text-sm tracking-wide shadow-lg shadow-emerald-950/40 cursor-pointer flex items-center justify-center space-x-2 transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {isSendingPrompt ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Sending Prompt to Phone...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            <span>Send Till {officialTill} M-Pesa Prompt</span>
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              ) : (
+                <>
               {/* 3 Step Instructions */}
               <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 space-y-2">
                 <p className="font-bold text-white flex items-center space-x-1.5">
@@ -658,6 +1051,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   <span>{isVerifying ? 'Verifying with Safaricom...' : 'Verify M-Pesa Message & Credit Wallet'}</span>
                 </button>
               </form>
+
+                </>
+              )}
 
             </>
           )}

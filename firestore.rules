@@ -47,5 +47,17 @@ service cloud.firestore {
     match /wallets/{walletId} {
       allow read, write: if true;
     }
+
+    match /mpesa_claims/{claimId} {
+      allow get: if isSignedIn();
+      allow create: if isSignedIn() && !exists(/databases/$(database)/documents/mpesa_claims/$(claimId));
+      allow update, delete: if isAdmin();
+    }
+
+    match /security_fraud_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
   }
 }

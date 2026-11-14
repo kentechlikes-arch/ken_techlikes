@@ -431,7 +431,7 @@ export async function loadWalletBalanceFromFirestore(userId = 'default_user'): P
 // ==========================================
 
 export const DEFAULT_BROADCAST_NOTICE = 
-  '⚡ Lipa Na M-Pesa Buy Goods Till 1856074 (KEN_TECH LIKES) is active with instant automated SMS verification. 0% fee!';
+  '⚡ Lipa Na M-Pesa Buy Goods Till 1856074 (KEN_TECH LIKES) Prompt Service is active! Trigger an instant STK Push prompt or verify via M-Pesa SMS. 0% fee!';
 
 export function subscribeToBroadcastNotice(
   onUpdate: (notice: string) => void

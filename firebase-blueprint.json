@@ -98,9 +98,40 @@
         "supportEmail": { "type": "string" },
         "supportPhone": { "type": "string" },
         "promoBonusPercent": { "type": "number" },
+        "tillNumber": { "type": "string" },
         "updatedAt": { "type": "string" },
         "updatedBy": { "type": "string" }
       }
+    },
+    "MpesaClaim": {
+      "title": "MpesaClaim",
+      "description": "Locked Safaricom M-Pesa transaction receipts to prevent replay attacks",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "amount": { "type": "number" },
+        "claimedAt": { "type": "string" },
+        "claimedBy": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "rawMessage": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["code", "amount", "claimedBy", "status"]
+    },
+    "SecurityFraudLog": {
+      "title": "SecurityFraudLog",
+      "description": "Audit log of tampered or forged M-Pesa SMS verification attempts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "reason": { "type": "string" },
+        "rawSnippet": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "actionTaken": { "type": "string" }
+      },
+      "required": ["id", "userId", "reason", "actionTaken"]
     }
   },
   "firestore": {
@@ -122,11 +153,19 @@
     },
     "/transactions/{transactionId}": {
       "schema": "Transaction",
-      "description": "Financial ledger of M-Pesa STK deposits and order debits"
+      "description": "Financial ledger of M-Pesa Till 1856074 deposits and order debits"
     },
     "/wallets/{walletId}": {
       "schema": "Wallet",
       "description": "User wallet balance and account profile"
+    },
+    "/mpesa_claims/{claimId}": {
+      "schema": "MpesaClaim",
+      "description": "Verified and permanently locked M-Pesa transaction references"
+    },
+    "/security_fraud_logs/{logId}": {
+      "schema": "SecurityFraudLog",
+      "description": "Anti-fraud violation and account closure logs"
     }
   }
 }

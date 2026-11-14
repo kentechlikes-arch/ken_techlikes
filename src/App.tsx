@@ -109,7 +109,7 @@ export default function App() {
       const cached = localStorage.getItem('kentech_broadcast_notice');
       if (cached) return cached;
     } catch (e) {}
-    return '⚡ Lipa Na M-Pesa Buy Goods Till 1856074 (KEN_TECH LIKES) is active with instant automated SMS verification. 0% fee!';
+    return '⚡ Lipa Na M-Pesa Buy Goods Till 1856074 (KEN_TECH LIKES) Prompt Service is active! Trigger an instant STK Push prompt or verify via M-Pesa SMS. 0% fee!';
   });
 
   // Global system, payment lines & operational settings with local cache fallback
@@ -728,6 +728,7 @@ export default function App() {
                   paymentPhone={systemSettings.paymentPhone}
                   paybill={systemSettings.tillNumber || systemSettings.paybill || '1856074'}
                   tillNumber={systemSettings.tillNumber || '1856074'}
+                  userPhoneNumber={userProfile?.phoneNumber}
                 />
                 {/* Reviews, Credibility & FAQ right below order widget */}
                 <ReviewsAndFaq />

@@ -98,8 +98,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <span className="font-medium text-emerald-400">KEN_TECH LIKES:</span>
-            <span className="hidden sm:inline text-slate-300">Kenya's #1 Automated SMM Growth Panel &bull; Lipa Na M-Pesa Buy Goods Till 1856074 24/7</span>
-            <span className="sm:hidden text-slate-300">Till 1856074 Active 24/7</span>
+            <span className="hidden sm:inline text-slate-300">Kenya's #1 Automated SMM Growth Panel &bull; Till 1856074 M-Pesa Prompt Service 24/7</span>
+            <span className="sm:hidden text-slate-300">Till 1856074 Prompt 24/7</span>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -251,6 +251,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <button
                 onClick={onOpenDeposit}
+                title="Instant Till 1856074 M-Pesa Prompt or SMS Top Up"
                 className="flex items-center space-x-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-sm shadow-emerald-900/30 transition-all active:scale-95 cursor-pointer"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
@@ -547,7 +548,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold"
             >
-              Lipa Na M-Pesa Till 1856074
+              Till 1856074 M-Pesa Prompt
             </button>
           </div>
 
